@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: IoT Store API
+  version: 1.0.0
+
+paths:
+
+  /catalog:
+    get:
+      summary: Получить список товаров
+      responses:
+        "200":
+          description: Список товаров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /cart/items:
+    post:
+      summary: Добавить товар в корзину
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Корзина после добавления
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "404":
+          description: Товар не найден
+        "400":
+          description: Некорректные данные
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /cart:
+    get:
+      summary: Получить корзину
+      responses:
+        "200":
+          description: Текущая корзина
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /orders:
+    post:
+      summary: Создать заказ
+      responses:
+        "201":
+          description: Заказ создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Корзина пуста
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /payments:
+    post:
+      summary: Обработать оплату
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id]
+              properties:
+                order_id:
+                  type: string
+      responses:
+        "200":
+          description: Оплата выполнена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: PAID
+        "404":
+          description: Заказ не найден
+        "409":
+          description: Заказ уже оплачен
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /ota:
+    get:
+      summary: Получить информацию об обновлении прошивки
+      parameters:
+        - in: query
+          name: device_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Информация о прошивке
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Firmware"
+        "404":
+          description: Устройство не найдено
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+
+  responses:
+    InternalError:
+      description: Внутренняя ошибка сервера
+
+  schemas:
+
+    Product:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+
+    CartItem:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+
+    Cart:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+
+    Order:
+      type: object
+      required: [id, items]
+      properties:
+        id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+
+    Firmware:
+      type: object
+      required: [version, download_url]
+      properties:
+        version:
+          type: string
+        download_url:
+          type: string
