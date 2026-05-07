@@ -96,3 +96,37 @@ curl -X GET "http://127.0.0.1:8000/ota?device_id=<device_id>"
 ```sh
 pytest
 ```
+
+## OLTP PostgreSQL
+
+### Состав
+
+```text
+db/00_schema.sql                    # DDL PostgreSQL
+db/01_seed_data.sql                 # генерация тестовых данных
+db/02_payment_transaction_explain.sql # EXPLAIN ANALYZE для POST /payments
+db/03_payment_transaction_plain.sql # обычная SQL-транзакция оплаты
+db/04_index_experiments.sql         # hash vs B-tree experiments
+db/run_all.sql                      # запуск всех SQL-скриптов из psql
+
+results/                            # сюда сохраняются результаты EXPLAIN
+```
+
+### Быстрый запуск через Docker
+
+```bash
+docker compose up -d
+
+docker exec -i ais_iot_store_pg psql -U ais -d ais_iot_store -f /work/db/00_schema.sql
+docker exec -i ais_iot_store_pg psql -U ais -d ais_iot_store -f /work/db/01_seed_data.sql
+
+docker exec -i ais_iot_store_pg psql -U ais -d ais_iot_store -f /work/db/02_payment_transaction_explain.sql > results/payment_transaction_explain.txt
+
+docker exec -i ais_iot_store_pg psql -U ais -d ais_iot_store -f /work/db/04_index_experiments.sql > results/index_experiments.txt
+```
+
+Удалить БД полностью:
+
+```bash
+docker compose down -v
+```
